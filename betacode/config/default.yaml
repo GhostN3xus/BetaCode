@@ -1,0 +1,82 @@
+# BetaCode - Configuração Padrão
+# Este arquivo contém as configurações padrão do BetaCode
+
+# Linguagens a analisar (deixe vazio para todas suportadas)
+languages:
+  - python
+  - javascript
+  - typescript
+  - java
+  - go
+  - php
+  - ruby
+  - c
+  - cpp
+  - csharp
+
+# Configurações de performance
+timeout: 300  # segundos
+workers: 4    # número de workers paralelos
+max_file_size: 10  # MB
+
+# Padrões de exclusão (glob patterns)
+exclude_patterns:
+  - "*.min.js"
+  - "*.min.css"
+  - "node_modules/**"
+  - "__pycache__/**"
+  - ".git/**"
+  - ".venv/**"
+  - "venv/**"
+  - "env/**"
+  - "*.pyc"
+  - "dist/**"
+  - "build/**"
+  - ".next/**"
+  - "coverage/**"
+  - "*.test.js"
+  - "*.spec.js"
+  - "test/**"
+  - "tests/**"
+  - "__tests__/**"
+
+# Nível mínimo de severidade para reportar
+# Opções: CRITICAL, HIGH, MEDIUM, LOW, INFO
+severity_level: LOW
+
+# Falhar build se encontrar findings críticos
+fail_on_critical: true
+
+# Formatos de output
+output_formats:
+  - json
+  - html
+
+# Diretório de output
+output_directory: "./betacode-reports"
+
+# Habilitar/desabilitar analisadores
+enable_secret_detection: true
+enable_dependency_analysis: true
+enable_quality_analysis: true
+
+# Integrações (configurar conforme necessário)
+integrations:
+  github:
+    enabled: false
+    token: null
+    create_issues: false
+
+  slack:
+    enabled: false
+    webhook_url: null
+    channel: "#security"
+
+  jira:
+    enabled: false
+    url: null
+    project_key: null
+    auth: null
+
+# Caminho para regras customizadas (opcional)
+rules_path: null

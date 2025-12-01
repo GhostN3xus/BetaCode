@@ -1,0 +1,213 @@
+# BetaCode - Regras de Segurança Python
+# Este arquivo contém regras para detectar vulnerabilidades em código Python
+
+rules:
+  # SQL Injection
+  - id: python-sql-injection
+    name: "SQL Injection"
+    description: "Detecção de possível SQL Injection por concatenação de strings em queries"
+    pattern: '(execute|executemany|cursor\.execute)\s*\(\s*["\'].*\%s.*["\'].*\%\s*'
+    severity: CRITICAL
+    language: python
+    cwe: CWE-89
+    owasp: "A03:2021 - Injection"
+    category: injection
+    tags: [sql, injection, database]
+    message_template: "Possível SQL Injection detectado. Use queries parametrizadas."
+    remediation: |
+      Use prepared statements ou queries parametrizadas:
+
+      # ❌ VULNERÁVEL
+      cursor.execute("SELECT * FROM users WHERE id = " + user_id)
+
+      # ✅ CORRETO
+      cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    references:
+      - https://owasp.org/www-project-top-ten/2017/A1_2017-Injection
+      - https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
+
+  # Command Injection
+  - id: python-command-injection-os-system
+    name: "Command Injection - os.system()"
+    description: "Uso de os.system() com input não sanitizado pode permitir command injection"
+    pattern: 'os\.system\s*\('
+    severity: CRITICAL
+    language: python
+    cwe: CWE-78
+    owasp: "A03:2021 - Injection"
+    category: injection
+    tags: [command-injection, os, shell]
+    message_template: "Uso de os.system() pode permitir command injection"
+    remediation: |
+      Use subprocess.run() com lista de argumentos ao invés de shell=True:
+
+      # ❌ VULNERÁVEL
+      os.system(f"ping {user_input}")
+
+      # ✅ CORRETO
+      subprocess.run(["ping", user_input], check=True, timeout=5)
+    references:
+      - https://owasp.org/www-community/attacks/Command_Injection
+
+  - id: python-command-injection-subprocess-shell
+    name: "Command Injection - subprocess com shell=True"
+    description: "subprocess com shell=True e input não sanitizado"
+    pattern: 'subprocess\.(run|call|Popen).*shell\s*=\s*True'
+    severity: HIGH
+    language: python
+    cwe: CWE-78
+    owasp: "A03:2021 - Injection"
+    category: injection
+    tags: [command-injection, subprocess, shell]
+    message_template: "subprocess com shell=True pode permitir command injection"
+    remediation: "Remova shell=True e passe comando como lista de argumentos"
+
+  # eval() e exec()
+  - id: python-eval-usage
+    name: "Uso de eval()"
+    description: "eval() pode executar código arbitrário"
+    pattern: '\beval\s*\('
+    severity: CRITICAL
+    language: python
+    cwe: CWE-95
+    owasp: "A03:2021 - Injection"
+    category: injection
+    tags: [eval, code-injection]
+    message_template: "Uso de eval() é extremamente perigoso"
+    remediation: |
+      Nunca use eval() com input do usuário. Use alternativas seguras:
+      - ast.literal_eval() para avaliar literais Python
+      - json.loads() para JSON
+      - Validação explícita de input
+
+  - id: python-exec-usage
+    name: "Uso de exec()"
+    description: "exec() pode executar código arbitrário"
+    pattern: '\bexec\s*\('
+    severity: CRITICAL
+    language: python
+    cwe: CWE-95
+    owasp: "A03:2021 - Injection"
+    category: injection
+    tags: [exec, code-injection]
+    message_template: "Uso de exec() é extremamente perigoso"
+
+  # Insecure Deserialization
+  - id: python-pickle-unsafe
+    name: "Desserialização insegura com pickle"
+    description: "pickle.loads() com dados não confiáveis permite execução de código"
+    pattern: 'pickle\.(loads|load)\s*\('
+    severity: CRITICAL
+    language: python
+    cwe: CWE-502
+    owasp: "A08:2021 - Software and Data Integrity Failures"
+    category: deserialization
+    tags: [pickle, deserialization]
+    message_template: "Desserialização com pickle é insegura"
+    remediation: "Use JSON ou outro formato seguro. Nunca deserialize dados não confiáveis."
+
+  # Path Traversal
+  - id: python-path-traversal
+    name: "Path Traversal"
+    description: "Acesso a arquivo com caminho não validado"
+    pattern: 'open\s*\([^\)]*[\+].*\)'
+    severity: HIGH
+    language: python
+    cwe: CWE-22
+    owasp: "A01:2021 - Broken Access Control"
+    category: path-traversal
+    tags: [path-traversal, file-access]
+    message_template: "Possível path traversal em acesso a arquivo"
+    remediation: |
+      Valide e normalize caminhos de arquivo:
+
+      from pathlib import Path
+
+      base_dir = Path("/uploads")
+      file_path = (base_dir / user_filename).resolve()
+
+      if not str(file_path).startswith(str(base_dir)):
+          raise ValueError("Path traversal detected")
+
+  # Weak Cryptography
+  - id: python-weak-hash-md5
+    name: "Uso de MD5"
+    description: "MD5 é criptograficamente quebrado"
+    pattern: 'hashlib\.md5\s*\('
+    severity: HIGH
+    language: python
+    cwe: CWE-327
+    owasp: "A02:2021 - Cryptographic Failures"
+    category: crypto
+    tags: [md5, weak-crypto]
+    message_template: "MD5 é inseguro para criptografia"
+    remediation: "Use SHA-256 ou superior: hashlib.sha256()"
+
+  - id: python-weak-hash-sha1
+    name: "Uso de SHA1"
+    description: "SHA1 está deprecated e vulnerável a colisões"
+    pattern: 'hashlib\.sha1\s*\('
+    severity: MEDIUM
+    language: python
+    cwe: CWE-327
+    owasp: "A02:2021 - Cryptographic Failures"
+    category: crypto
+    tags: [sha1, weak-crypto]
+    message_template: "SHA1 é inseguro, use SHA-256+"
+
+  # Insecure Random
+  - id: python-weak-random
+    name: "Gerador de números aleatórios fraco"
+    description: "random.random() não é criptograficamente seguro"
+    pattern: 'random\.(random|randint|choice|shuffle)\s*\('
+    severity: MEDIUM
+    language: python
+    cwe: CWE-330
+    owasp: "A02:2021 - Cryptographic Failures"
+    category: crypto
+    tags: [random, crypto]
+    message_template: "Use secrets ou os.urandom() para fins criptográficos"
+    remediation: |
+      Para fins de segurança, use:
+
+      import secrets
+      token = secrets.token_hex(32)
+      random_number = secrets.randbelow(100)
+
+  # Insecure HTTP
+  - id: python-flask-debug-true
+    name: "Flask debug mode em produção"
+    description: "Flask com debug=True expõe informações sensíveis"
+    pattern: 'app\.run\s*\([^\)]*debug\s*=\s*True'
+    severity: HIGH
+    language: python
+    cwe: CWE-489
+    owasp: "A05:2021 - Security Misconfiguration"
+    category: configuration
+    tags: [flask, debug, misconfiguration]
+    message_template: "Flask debug mode ativado (vazamento de informação)"
+    remediation: "Nunca use debug=True em produção"
+
+  - id: python-django-debug-true
+    name: "Django DEBUG=True"
+    description: "Django com DEBUG=True em produção"
+    pattern: 'DEBUG\s*=\s*True'
+    severity: HIGH
+    language: python
+    cwe: CWE-489
+    owasp: "A05:2021 - Security Misconfiguration"
+    category: configuration
+    tags: [django, debug]
+
+  # YAML Load Unsafe
+  - id: python-yaml-unsafe-load
+    name: "YAML Load Inseguro"
+    description: "yaml.load() sem Loader é inseguro"
+    pattern: 'yaml\.load\s*\([^,)]*\)'
+    severity: HIGH
+    language: python
+    cwe: CWE-502
+    owasp: "A08:2021 - Software and Data Integrity Failures"
+    category: deserialization
+    tags: [yaml, deserialization]
+    message_template: "Use yaml.safe_load() ao invés de yaml.load()"
