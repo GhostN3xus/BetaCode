@@ -1,0 +1,48 @@
+rules:
+  - id: "owasp-api-bola-py"
+    name: "Broken Object Level Authorization (BOLA/IDOR)"
+    description: "Detects patterns suggesting direct object reference using user input without apparent checks."
+    pattern: 'objects\.get\(id\s*=\s*request\.(args|GET|POST|json)\.get\(["\']id["\']\)\)'
+    severity: "HIGH"
+    language: "python"
+    cwe: "CWE-639"
+    owasp: "API1:2023-Broken Object Level Authorization"
+    remediation: "Implement access control checks to ensure the user owns the object."
+    category: "security"
+    tags: ["owasp-api", "bola"]
+
+  - id: "owasp-api-mass-assignment-js"
+    name: "Mass Assignment (JavaScript)"
+    description: "Detects blindly copying request body to database model."
+    pattern: '(User|Model)\.create\(\s*req\.body\s*\)'
+    severity: "HIGH"
+    language: "javascript"
+    cwe: "CWE-915"
+    owasp: "API3:2023-Broken Object Property Level Authorization"
+    remediation: "Explicitly select allowed fields or use a DTO/whitelist."
+    category: "security"
+    tags: ["owasp-api", "mass-assignment"]
+
+  - id: "owasp-api-data-exposure-py"
+    name: "Excessive Data Exposure"
+    description: "Detects returning full model dictionaries/objects to the client."
+    pattern: 'return\s*jsonify\(\s*user\.__dict__\s*\)'
+    severity: "MEDIUM"
+    language: "python"
+    cwe: "CWE-200"
+    owasp: "API3:2019-Excessive Data Exposure"
+    remediation: "Filter the response to include only necessary fields."
+    category: "security"
+    tags: ["owasp-api", "data-exposure"]
+
+  - id: "owasp-api-no-rate-limit-py"
+    name: "Lack of Rate Limiting Decorator"
+    description: "Checks for login routes without apparent rate limiting decorators (heuristic)."
+    pattern: '@app\.route\(["\'].*login.*["\']\)\n(?!.*limiter).*\ndef'
+    severity: "LOW"
+    language: "python"
+    cwe: "CWE-799"
+    owasp: "API4:2023-Unrestricted Resource Consumption"
+    remediation: "Apply rate limiting to sensitive endpoints."
+    category: "security"
+    tags: ["owasp-api", "rate-limiting"]
