@@ -1,0 +1,181 @@
+# BetaCode - Regras de Segurança JavaScript/TypeScript
+# Este arquivo contém regras para detectar vulnerabilidades em código JavaScript/TypeScript
+
+rules:
+  # XSS
+  - id: javascript-xss-innerhtml
+    name: "XSS via innerHTML"
+    description: "Atribuição a innerHTML com dados não sanitizados pode causar XSS"
+    pattern: '\.innerHTML\s*=\s*(?!["''])'
+    severity: HIGH
+    language: javascript
+    cwe: CWE-79
+    owasp: "A03:2021 - Injection"
+    category: xss
+    tags: [xss, dom]
+    message_template: "Possível XSS via innerHTML"
+    remediation: |
+      Use textContent ao invés de innerHTML ou sanitize o input:
+
+      // ❌ VULNERÁVEL
+      element.innerHTML = userInput;
+
+      // ✅ CORRETO
+      element.textContent = userInput;
+      // OU use biblioteca de sanitização como DOMPurify
+      element.innerHTML = DOMPurify.sanitize(userInput);
+    references:
+      - https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+
+  - id: javascript-xss-document-write
+    name: "XSS via document.write()"
+    description: "document.write() com dados não sanitizados"
+    pattern: 'document\.write\s*\('
+    severity: HIGH
+    language: javascript
+    cwe: CWE-79
+    owasp: "A03:2021 - Injection"
+    category: xss
+    tags: [xss, dom]
+    message_template: "document.write() pode causar XSS"
+
+  - id: javascript-xss-eval
+    name: "eval() com dados não confiáveis"
+    description: "eval() pode executar código arbitrário"
+    pattern: '\beval\s*\('
+    severity: CRITICAL
+    language: javascript
+    cwe: CWE-95
+    owasp: "A03:2021 - Injection"
+    category: injection
+    tags: [eval, code-injection]
+    message_template: "Uso de eval() é extremamente perigoso"
+    remediation: "Nunca use eval(). Use JSON.parse() para parsing de JSON."
+
+  # SQL Injection (Node.js)
+  - id: javascript-sql-injection
+    name: "SQL Injection"
+    description: "Query SQL com concatenação de strings"
+    pattern: '(query|execute)\s*\(\s*[`"].*\$\{.*\}.*[`"]'
+    severity: CRITICAL
+    language: javascript
+    cwe: CWE-89
+    owasp: "A03:2021 - Injection"
+    category: injection
+    tags: [sql, injection]
+    message_template: "Possível SQL Injection"
+    remediation: |
+      Use prepared statements:
+
+      // ❌ VULNERÁVEL
+      db.query(`SELECT * FROM users WHERE id = ${userId}`);
+
+      // ✅ CORRETO
+      db.query('SELECT * FROM users WHERE id = ?', [userId]);
+
+  # Command Injection
+  - id: javascript-command-injection
+    name: "Command Injection"
+    description: "Execução de comando com input não sanitizado"
+    pattern: '(exec|spawn|execSync|execFile)\s*\([^)]*\$\{'
+    severity: CRITICAL
+    language: javascript
+    cwe: CWE-78
+    owasp: "A03:2021 - Injection"
+    category: injection
+    tags: [command-injection]
+    message_template: "Possível command injection"
+    remediation: "Use spawn() com argumentos separados ao invés de shell commands"
+
+  # Weak Crypto
+  - id: javascript-weak-hash-md5
+    name: "Uso de MD5"
+    description: "MD5 é criptograficamente quebrado"
+    pattern: 'createHash\s*\(\s*["\']md5["\']'
+    severity: HIGH
+    language: javascript
+    cwe: CWE-327
+    owasp: "A02:2021 - Cryptographic Failures"
+    category: crypto
+    tags: [md5, weak-crypto]
+    message_template: "MD5 é inseguro"
+    remediation: "Use SHA-256 ou superior"
+
+  # Insecure Random
+  - id: javascript-weak-random
+    name: "Math.random() para criptografia"
+    description: "Math.random() não é criptograficamente seguro"
+    pattern: 'Math\.random\s*\('
+    severity: MEDIUM
+    language: javascript
+    cwe: CWE-330
+    owasp: "A02:2021 - Cryptographic Failures"
+    category: crypto
+    tags: [random]
+    message_template: "Use crypto.randomBytes() para fins criptográficos"
+
+  # Regex DoS
+  - id: javascript-regex-dos
+    name: "Possível ReDoS"
+    description: "Regex com nested quantifiers pode causar DoS"
+    pattern: 'new RegExp\([^)]*(\+\*|\*\+|\*\{)'
+    severity: MEDIUM
+    language: javascript
+    cwe: CWE-400
+    owasp: "A05:2021 - Security Misconfiguration"
+    category: dos
+    tags: [regex, dos]
+    message_template: "Regex pode causar ReDoS"
+
+  # Prototype Pollution
+  - id: javascript-prototype-pollution
+    name: "Possível Prototype Pollution"
+    description: "Atribuição a propriedade __proto__"
+    pattern: '__proto__\s*[=\[]'
+    severity: HIGH
+    language: javascript
+    cwe: CWE-1321
+    owasp: "A08:2021 - Software and Data Integrity Failures"
+    category: injection
+    tags: [prototype-pollution]
+    message_template: "Possível prototype pollution"
+
+  # Path Traversal
+  - id: javascript-path-traversal
+    name: "Path Traversal"
+    description: "Acesso a arquivo sem validação de path"
+    pattern: 'fs\.(readFile|readFileSync|writeFile)\s*\([^)]*req\.'
+    severity: HIGH
+    language: javascript
+    cwe: CWE-22
+    owasp: "A01:2021 - Broken Access Control"
+    category: path-traversal
+    tags: [path-traversal]
+    message_template: "Possível path traversal"
+
+  # CORS Misconfiguration
+  - id: javascript-cors-misconfiguration
+    name: "CORS mal configurado"
+    description: "CORS permite qualquer origem (*)"
+    pattern: 'Access-Control-Allow-Origin.*\*'
+    severity: MEDIUM
+    language: javascript
+    cwe: CWE-346
+    owasp: "A05:2021 - Security Misconfiguration"
+    category: cors
+    tags: [cors, misconfiguration]
+    message_template: "CORS permite qualquer origem"
+
+  # JWT without verification
+  - id: javascript-jwt-no-verify
+    name: "JWT sem verificação"
+    description: "Decodificação de JWT sem verificação de assinatura"
+    pattern: 'jwt\.decode\s*\([^,)]*\)'
+    severity: HIGH
+    language: javascript
+    cwe: CWE-347
+    owasp: "A02:2021 - Cryptographic Failures"
+    category: jwt
+    tags: [jwt, authentication]
+    message_template: "JWT decodificado sem verificação"
+    remediation: "Use jwt.verify() ao invés de jwt.decode()"
