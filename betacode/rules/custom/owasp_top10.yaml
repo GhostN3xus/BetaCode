@@ -2,6 +2,8 @@ rules:
   - id: "owasp-a01-injection-sql-py"
     name: "SQL Injection (Python)"
     description: "Detects potential SQL Injection vulnerabilities in Python code."
+    pattern: |
+      (execute|cursor\.execute|executemany)\s*\(\s*f?["'].*\{.*\}
     pattern: '(execute|cursor\.execute|executemany)\s*\(\s*f?["\'].*\{.*\}'
     severity: "CRITICAL"
     language: "python"
@@ -14,6 +16,8 @@ rules:
   - id: "owasp-a01-injection-cmd-py"
     name: "Command Injection (Python)"
     description: "Detects potential Command Injection vulnerabilities."
+    pattern: |
+      (os\.system|subprocess\.call|subprocess\.Popen)\s*\(\s*f?["'].*\{.*\}.*shell\s*=\s*True
     pattern: '(os\.system|subprocess\.call|subprocess\.Popen)\s*\(\s*f?["\'].*\{.*\}.*shell\s*=\s*True'
     severity: "CRITICAL"
     language: "python"
@@ -26,6 +30,8 @@ rules:
   - id: "owasp-a02-broken-auth-hardcoded-py"
     name: "Hardcoded Credentials (Python)"
     description: "Detects hardcoded passwords or keys."
+    pattern: |
+      (?i)(password|secret|apikey|token)\s*=\s*["'][a-zA-Z0-9_\-]{8,}["']
     pattern: '(?i)(password|secret|apikey|token)\s*=\s*["\'][a-zA-Z0-9_\-]{8,}["\']'
     severity: "HIGH"
     language: "python"
@@ -38,6 +44,8 @@ rules:
   - id: "owasp-a01-injection-sql-js"
     name: "SQL Injection (JavaScript)"
     description: "Detects potential SQL Injection in Node.js."
+    pattern: |
+      query\s*\(\s*`.*\{.*\}`
     pattern: 'query\s*\(\s*`.*\{.*\}`'
     severity: "CRITICAL"
     language: "javascript"
@@ -50,6 +58,8 @@ rules:
   - id: "owasp-a03-xss-js"
     name: "Cross-Site Scripting (XSS)"
     description: "Detects potential XSS via dangerouslySetInnerHTML or similar."
+    pattern: |
+      dangerouslySetInnerHTML|innerHTML\s*=
     pattern: 'dangerouslySetInnerHTML|innerHTML\s*='
     severity: "HIGH"
     language: "javascript"
@@ -62,6 +72,8 @@ rules:
   - id: "owasp-a05-security-misconfig-debug-py"
     name: "Debug Mode Enabled (Django/Flask)"
     description: "Detects if debug mode is enabled in production configuration."
+    pattern: |
+      DEBUG\s*=\s*True
     pattern: 'DEBUG\s*=\s*True'
     severity: "MEDIUM"
     language: "python"
@@ -74,6 +86,8 @@ rules:
   - id: "owasp-a07-auth-failure-weak-hash-py"
     name: "Weak Hashing Algorithm (Python)"
     description: "Detects use of weak hashing algorithms like MD5 or SHA1."
+    pattern: |
+      hashlib\.(md5|sha1)\(
     pattern: 'hashlib\.(md5|sha1)\('
     severity: "MEDIUM"
     language: "python"
@@ -86,6 +100,8 @@ rules:
   - id: "owasp-a04-insecure-design-pickle-py"
     name: "Insecure Deserialization (Pickle)"
     description: "Detects usage of pickle which is vulnerable to remote code execution."
+    pattern: |
+      pickle\.loads?\(
     pattern: 'pickle\.loads?\('
     severity: "CRITICAL"
     language: "python"
@@ -98,6 +114,8 @@ rules:
   - id: "owasp-a01-injection-sql-java"
     name: "SQL Injection (Java)"
     description: "Detects potential SQL Injection in Java (JDBC)."
+    pattern: |
+      (createStatement|prepareStatement)\s*\(\s*["'].*\+\s*[a-zA-Z0-9_]+\s*\+
     pattern: '(createStatement|prepareStatement)\s*\(\s*["\'].*\+\s*[a-zA-Z0-9_]+\s*\+'
     severity: "CRITICAL"
     language: "java"
@@ -110,6 +128,8 @@ rules:
   - id: "owasp-a02-broken-auth-hardcoded-java"
     name: "Hardcoded Password (Java)"
     description: "Detects hardcoded passwords in Java strings."
+    pattern: |
+      (?i)(password|secret|key)\s*=\s*["'][a-zA-Z0-9_\-]{8,}["']
     pattern: '(?i)(password|secret|key)\s*=\s*["\'][a-zA-Z0-9_\-]{8,}["\']'
     severity: "HIGH"
     language: "java"

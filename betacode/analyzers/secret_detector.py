@@ -170,6 +170,24 @@ class SecretDetector:
             'severity': 'HIGH',
             'cwe': 'CWE-798',
         },
+        'npm_token': {
+            'pattern': r'(?i)npm_[0-9a-zA-Z]{36}',
+            'name': 'NPM Token',
+            'severity': 'CRITICAL',
+            'cwe': 'CWE-798',
+        },
+        'pypi_token': {
+            'pattern': r'pypi-[0-9a-zA-Z_-]{20,}',
+            'name': 'PyPI Token',
+            'severity': 'CRITICAL',
+            'cwe': 'CWE-798',
+        },
+        'digitalocean_token': {
+            'pattern': r'dop_v1_[0-9a-fA-F]{64}',
+            'name': 'DigitalOcean Token',
+            'severity': 'CRITICAL',
+            'cwe': 'CWE-798',
+        },
     }
 
     # Padrões de falso positivo (para reduzir ruído)

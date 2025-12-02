@@ -72,6 +72,9 @@ class CodeQualityAnalyzer:
         # Detectar código comentado
         findings.extend(self._detect_commented_code(code, file_path))
 
+        # Detectar complexidade
+        findings.extend(self._detect_complexity(code, file_path))
+
         logger.debug(f"Análise de qualidade: {len(findings)} finding(s) em {file_path}")
 
         return findings
@@ -117,6 +120,70 @@ class CodeQualityAnalyzer:
                 findings.append(finding)
 
         return findings
+
+    def _detect_complexity(self, code: str, file_path: str) -> List[Finding]:
+        """
+        Detecta alta complexidade (heurística baseada em indentação).
+        Aproximação da complexidade ciclomática.
+        """
+        findings = []
+        lines = code.split('\n')
+
+        current_function = None
+        current_complexity = 1
+        function_start = 0
+
+        # Regex para detectar início de função (simplificado)
+        func_start_pattern = re.compile(r'^\s*(def|function|public|private|protected)\s+')
+        # Regex para detectar branching
+        branch_pattern = re.compile(r'\b(if|for|while|case|catch|elif|else)\b')
+
+        for i, line in enumerate(lines):
+            line_num = i + 1
+            stripped = line.strip()
+
+            # Detectar início de função
+            if func_start_pattern.match(stripped):
+                # Finalizar função anterior
+                if current_function and current_complexity > self.MAX_COMPLEXITY:
+                    self._add_complexity_finding(findings, file_path, function_start, current_function, current_complexity, lines)
+
+                # Iniciar nova função
+                current_function = stripped.split('(')[0] # Nome aproximado
+                current_complexity = 1
+                function_start = line_num
+                continue
+
+            # Calcular complexidade
+            if current_function:
+                # Contar keywords de controle de fluxo
+                matches = branch_pattern.findall(stripped)
+                current_complexity += len(matches)
+
+        # Verificar última função
+        if current_function and current_complexity > self.MAX_COMPLEXITY:
+            self._add_complexity_finding(findings, file_path, function_start, current_function, current_complexity, lines)
+
+        return findings
+
+    def _add_complexity_finding(self, findings, file_path, line_num, func_name, complexity, lines):
+        finding = Finding(
+            id=Finding.generate_id(file_path, line_num, "high_complexity"),
+            rule_id="quality_high_complexity",
+            finding_type=FindingType.QUALITY,
+            severity=Severity.MEDIUM,
+            file=file_path,
+            line=line_num,
+            column=1,
+            message=f"Alta complexidade detectada em '{func_name}' (Score: {complexity}, Max: {self.MAX_COMPLEXITY})",
+            code_snippet=lines[line_num - 1] if line_num <= len(lines) else "",
+            remediations=[
+                "Refatorar para reduzir aninhamento",
+                "Extrair partes da lógica para novas funções",
+                "Simplificar expressões condicionais"
+            ]
+        )
+        findings.append(finding)
 
     def _detect_long_lines(self, code: str, file_path: str) -> List[Finding]:
         """Detecta linhas muito longas"""
@@ -205,6 +272,28 @@ class CodeQualityAnalyzer:
                         findings.append(finding)
 
                     current_function = None
+
+        # Check if the last function goes until the end of the file
+        if current_function:
+             function_length = len(lines) - function_start + 1
+             if function_length > self.MAX_FUNCTION_LENGTH:
+                 finding = Finding(
+                     id=Finding.generate_id(file_path, function_start, "long_function"),
+                     rule_id="quality_long_function",
+                     finding_type=FindingType.QUALITY,
+                     severity=Severity.MEDIUM,
+                     file=file_path,
+                     line=function_start,
+                     column=1,
+                     message=f"Função '{current_function}' muito longa ({function_length} linhas, máximo {self.MAX_FUNCTION_LENGTH})",
+                     code_snippet=lines[function_start - 1] if function_start <= len(lines) else "",
+                     remediations=[
+                         "Dividir função em funções menores",
+                         "Extrair lógica em métodos auxiliares",
+                         "Aplicar princípio da responsabilidade única (SRP)"
+                     ]
+                 )
+                 findings.append(finding)
 
         return findings
 

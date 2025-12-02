@@ -13,7 +13,8 @@ def cli():
     pass
 
 @cli.command()
-@click.argument('path', type=click.Path(exists=True))
+@click.argument('path', type=click.Path(exists=True))feature/integrations-and-rules-fix
+@click.option('--format', '-f', multiple=True, default=['json'], help='Output format (json, html, sarif)')
 @click.option('--format', '-f', multiple=True, default=['json'], help='Output format (json)')
 @click.option('--output', '-o', help='Output file path')
 def analyze(path, format, output):
@@ -25,6 +26,14 @@ def analyze(path, format, output):
         # Determine output strategy
         if output:
             import json
+            # Simple Output Handler
+            if 'html' in format:
+                _generate_html_report(results, output)
+            elif 'sarif' in format:
+                _generate_sarif_report(results, output)
+            else:
+                # Default to JSON
+                with open(output, 'w') as f:
             # Basic JSON dump if output is specified, handling just one format for simplicity in this iteration
             # In a full implementation, we would use a Reporter class to handle multiple formats
             with open(output, 'w') as f:
@@ -112,6 +121,99 @@ def import_and_analyze(provider, repo_identifier, token, username, org):
     finally:
         if client:
             client.cleanup()
+
+def _generate_html_report(results, output_path):
+    """Generates a simple HTML report."""
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>BetaCode Scan Report</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            h1 {{ color: #333; }}
+            .summary {{ background: #f4f4f4; padding: 15px; border-radius: 5px; }}
+            .finding {{ border: 1px solid #ddd; margin-bottom: 10px; padding: 10px; border-radius: 5px; }}
+            .CRITICAL {{ border-left: 5px solid #d9534f; }}
+            .HIGH {{ border-left: 5px solid #f0ad4e; }}
+            .MEDIUM {{ border-left: 5px solid #5bc0de; }}
+            .LOW {{ border-left: 5px solid #5cb85c; }}
+            .code {{ background: #eee; padding: 5px; font-family: monospace; display: block; white-space: pre-wrap; }}
+        </style>
+    </head>
+    <body>
+        <h1>BetaCode Analysis Report</h1>
+        <div class="summary">
+            <p>Target: {results.target}</p>
+            <p>Total Findings: {results.total_findings}</p>
+            <p>Risk Score: {results.metrics.get('risk_score', 0)}</p>
+        </div>
+        <h2>Findings</h2>
+    """
+
+    for finding in results.findings:
+        html_content += f"""
+        <div class="finding {finding.severity.name}">
+            <h3>[{finding.severity.name}] {finding.message}</h3>
+            <p><strong>Rule:</strong> {finding.rule_id} | <strong>CWE:</strong> {finding.cwe}</p>
+            <p><strong>File:</strong> {finding.file}:{finding.line}</p>
+            <code class="code">{finding.code_snippet}</code>
+            <p><strong>Remediation:</strong> {finding.remediations[0] if finding.remediations else 'N/A'}</p>
+        </div>
+        """
+
+    html_content += """
+    </body>
+    </html>
+    """
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+
+def _generate_sarif_report(results, output_path):
+    """Generates a SARIF report."""
+    import json
+
+    runs = [{
+        "tool": {
+            "driver": {
+                "name": "BetaCode",
+                "version": "1.0.0",
+                "rules": []
+            }
+        },
+        "results": []
+    }]
+
+    rules_map = {}
+
+    for finding in results.findings:
+        if finding.rule_id not in rules_map:
+            rule_idx = len(rules_map)
+            rules_map[finding.rule_id] = rule_idx
+            runs[0]["tool"]["driver"]["rules"].append({
+                "id": finding.rule_id,
+                "shortDescription": {"text": finding.message},
+                "help": {"text": "\n".join(finding.remediations) if finding.remediations else ""}
+            })
+
+        runs[0]["results"].append({
+            "ruleId": finding.rule_id,
+            "level": "error" if finding.severity.name in ['CRITICAL', 'HIGH'] else "warning",
+            "message": {"text": finding.message},
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": {"uri": finding.file},
+                    "region": {
+                        "startLine": finding.line,
+                        "startColumn": finding.column
+                    }
+                }
+            }]
+        })
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump({"version": "2.1.0", "$schema": "https://json.schemastore.org/sarif-2.1.0-rtm.5.json", "runs": runs}, f, indent=2)
 
 if __name__ == '__main__':
     cli()
