@@ -4,6 +4,7 @@ rules:
     description: "Detects potential SQL Injection vulnerabilities in Python code."
     pattern: |
       (execute|cursor\.execute|executemany)\s*\(\s*f?["'].*\{.*\}
+    pattern: '(execute|cursor\.execute|executemany)\s*\(\s*f?["\'].*\{.*\}'
     severity: "CRITICAL"
     language: "python"
     cwe: "CWE-89"
@@ -17,6 +18,7 @@ rules:
     description: "Detects potential Command Injection vulnerabilities."
     pattern: |
       (os\.system|subprocess\.call|subprocess\.Popen)\s*\(\s*f?["'].*\{.*\}.*shell\s*=\s*True
+    pattern: '(os\.system|subprocess\.call|subprocess\.Popen)\s*\(\s*f?["\'].*\{.*\}.*shell\s*=\s*True'
     severity: "CRITICAL"
     language: "python"
     cwe: "CWE-78"
@@ -30,6 +32,7 @@ rules:
     description: "Detects hardcoded passwords or keys."
     pattern: |
       (?i)(password|secret|apikey|token)\s*=\s*["'][a-zA-Z0-9_\-]{8,}["']
+    pattern: '(?i)(password|secret|apikey|token)\s*=\s*["\'][a-zA-Z0-9_\-]{8,}["\']'
     severity: "HIGH"
     language: "python"
     cwe: "CWE-798"
@@ -43,6 +46,7 @@ rules:
     description: "Detects potential SQL Injection in Node.js."
     pattern: |
       query\s*\(\s*`.*\{.*\}`
+    pattern: 'query\s*\(\s*`.*\{.*\}`'
     severity: "CRITICAL"
     language: "javascript"
     cwe: "CWE-89"
@@ -56,6 +60,7 @@ rules:
     description: "Detects potential XSS via dangerouslySetInnerHTML or similar."
     pattern: |
       dangerouslySetInnerHTML|innerHTML\s*=
+    pattern: 'dangerouslySetInnerHTML|innerHTML\s*='
     severity: "HIGH"
     language: "javascript"
     cwe: "CWE-79"
@@ -69,6 +74,7 @@ rules:
     description: "Detects if debug mode is enabled in production configuration."
     pattern: |
       DEBUG\s*=\s*True
+    pattern: 'DEBUG\s*=\s*True'
     severity: "MEDIUM"
     language: "python"
     cwe: "CWE-489"
@@ -82,6 +88,7 @@ rules:
     description: "Detects use of weak hashing algorithms like MD5 or SHA1."
     pattern: |
       hashlib\.(md5|sha1)\(
+    pattern: 'hashlib\.(md5|sha1)\('
     severity: "MEDIUM"
     language: "python"
     cwe: "CWE-328"
@@ -95,6 +102,7 @@ rules:
     description: "Detects usage of pickle which is vulnerable to remote code execution."
     pattern: |
       pickle\.loads?\(
+    pattern: 'pickle\.loads?\('
     severity: "CRITICAL"
     language: "python"
     cwe: "CWE-502"
@@ -108,6 +116,7 @@ rules:
     description: "Detects potential SQL Injection in Java (JDBC)."
     pattern: |
       (createStatement|prepareStatement)\s*\(\s*["'].*\+\s*[a-zA-Z0-9_]+\s*\+
+    pattern: '(createStatement|prepareStatement)\s*\(\s*["\'].*\+\s*[a-zA-Z0-9_]+\s*\+'
     severity: "CRITICAL"
     language: "java"
     cwe: "CWE-89"
@@ -121,6 +130,7 @@ rules:
     description: "Detects hardcoded passwords in Java strings."
     pattern: |
       (?i)(password|secret|key)\s*=\s*["'][a-zA-Z0-9_\-]{8,}["']
+    pattern: '(?i)(password|secret|key)\s*=\s*["\'][a-zA-Z0-9_\-]{8,}["\']'
     severity: "HIGH"
     language: "java"
     cwe: "CWE-798"

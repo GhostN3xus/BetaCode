@@ -4,6 +4,7 @@ rules:
     description: "Detects patterns suggesting direct object reference using user input without apparent checks."
     pattern: |
       objects\.get\(id\s*=\s*request\.(args|GET|POST|json)\.get\(["']id["']\)\)
+    pattern: 'objects\.get\(id\s*=\s*request\.(args|GET|POST|json)\.get\(["\']id["\']\)\)'
     severity: "HIGH"
     language: "python"
     cwe: "CWE-639"
@@ -11,12 +12,12 @@ rules:
     remediation: "Implement access control checks to ensure the user owns the object."
     category: "security"
     tags: ["owasp-api", "bola"]
-
   - id: "owasp-api-mass-assignment-js"
     name: "Mass Assignment (JavaScript)"
     description: "Detects blindly copying request body to database model."
     pattern: |
       (User|Model)\.create\(\s*req\.body\s*\)
+    pattern: '(User|Model)\.create\(\s*req\.body\s*\)'
     severity: "HIGH"
     language: "javascript"
     cwe: "CWE-915"
@@ -30,6 +31,7 @@ rules:
     description: "Detects returning full model dictionaries/objects to the client."
     pattern: |
       return\s*jsonify\(\s*user\.__dict__\s*\)
+    pattern: 'return\s*jsonify\(\s*user\.__dict__\s*\)'
     severity: "MEDIUM"
     language: "python"
     cwe: "CWE-200"
@@ -43,6 +45,8 @@ rules:
     description: "Checks for login routes without apparent rate limiting decorators (heuristic)."
     pattern: |
       @app\.route\(["'].*login.*["']\)\n(?!.*limiter).*\ndef
+
+    pattern: '@app\.route\(["\'].*login.*["\']\)\n(?!.*limiter).*\ndef'
     severity: "LOW"
     language: "python"
     cwe: "CWE-799"

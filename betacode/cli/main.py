@@ -13,8 +13,9 @@ def cli():
     pass
 
 @cli.command()
-@click.argument('path', type=click.Path(exists=True))
+@click.argument('path', type=click.Path(exists=True))feature/integrations-and-rules-fix
 @click.option('--format', '-f', multiple=True, default=['json'], help='Output format (json, html, sarif)')
+@click.option('--format', '-f', multiple=True, default=['json'], help='Output format (json)')
 @click.option('--output', '-o', help='Output file path')
 def analyze(path, format, output):
     """Analyze a local file or directory."""
@@ -25,7 +26,6 @@ def analyze(path, format, output):
         # Determine output strategy
         if output:
             import json
-
             # Simple Output Handler
             if 'html' in format:
                 _generate_html_report(results, output)
@@ -34,6 +34,11 @@ def analyze(path, format, output):
             else:
                 # Default to JSON
                 with open(output, 'w') as f:
+            # Basic JSON dump if output is specified, handling just one format for simplicity in this iteration
+            # In a full implementation, we would use a Reporter class to handle multiple formats
+            with open(output, 'w') as f:
+                if 'json' in format:
+                    # Convert results to dict (simplified)
                     data = {
                         "findings": [
                             {
@@ -49,7 +54,6 @@ def analyze(path, format, output):
                         "metrics": results.metrics
                     }
                     json.dump(data, f, indent=2)
-
             click.echo(f"Results saved to {output}")
 
         click.echo(f"Analysis complete. Found {results.total_findings} findings.")
